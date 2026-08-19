@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "storageType": "local_json",
+    "sessionName": "wa_bot_session",
+    "autoReadMessages": true,
+    "autoReplyEnabled": false,
+    "autoReplies": []
+  },
+  "logs": [],
+  "stats": {
+    "totalSent": 0,
+    "totalReceived": 0,
+    "totalFailed": 0,
+    "lastActiveAt": null
+  }
+}
