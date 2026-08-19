@@ -41,19 +41,6 @@ Berikut adalah struktur direktori utama proyek beserta fungsinya secara lengkap:
 
 ## 🚀 Fitur yang Tersedia Secara Bawaan
 
-```markdown
-*DAFTAR FITUR*
-
-- *.brat*: Membuat stiker teks Brat. Contoh: *.brat halo guys* atau reply teks dengan *.brat*.
-- *.bratvid*: Membuat stiker video Brat (Animasi). Contoh: *.bratvid halo guys* atau reply teks dengan *.bratvid*.
-- *.s*: Reply foto/video atau kirim foto/video dengan caption .s untuk membuat stiker.
-- *.tiktok*: Download video/slide foto TikTok tanpa watermark. Contoh: *.tiktok [link]* atau reply link TikTok.
-- *.play*: Cari dan download lagu dari YouTube. Contoh: *.play Alan Walker Alone*.
-- *.menu*: Menampilkan daftar fitur.
-
-_Bot Session: _
-```
-
 | Perintah | Deskripsi | Sumber API / Library |
 | --- | --- | --- |
 | `.menu` | Menampilkan seluruh menu bantuan fitur aktif | Internal |
@@ -217,8 +204,8 @@ Pastikan VPS (disarankan menggunakan OS Ubuntu/Debian) sudah terinstal:
 **1. Clone Repository**
 Masuk ke VPS melalui SSH, kemudian *clone* repository bot:
 ```bash
-git clone https://github.com/Creatorsitee/Base-Bot-Whatsapp-Web.git
-cd Base-Bot-Whatsapp-Web
+git clone https://github.com/Creatorsitee/Base-Bot-Whatsapp.git
+cd Base-Bot-Whatsapp
 ```
 
 **2. Instalasi Dependensi**
