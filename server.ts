@@ -6,12 +6,12 @@ import { createServer as createViteServer } from 'vite';
 
 dns.setDefaultResultOrder('ipv4first');
 
-import apiRouter from './fitur/routes';
-import { waBot } from './fitur/whatsapp';
+import apiRouter from './plugin/routes';
+import { waBot } from './plugin/whatsapp';
 
 async function startServer() {
   const app = express();
-  const PORT = parseInt(process.env.PORT || '8080', 10);
+  const PORT = 3000;
 
   console.log(`[Startup] Mendeteksi PORT: ${process.env.PORT || 'tidak diatur, menggunakan default 8080'}`);
   console.log(`[Startup] Environment: ${process.env.NODE_ENV || 'development'}`);

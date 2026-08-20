@@ -2,7 +2,7 @@
 
 Aplikasi bot WhatsApp multi-sesi berbasis web modern (React + Vite + Tailwind CSS). Bot ini menggunakan library `@itsliaaa/baileys` untuk koneksi via **Pairing Code** dan pengelolaan sesi mandiri 24/7.
 
-## 📁 Struktur Proyek (Project Structure)
+### 📁 Struktur Proyek (Project Structure)
 
 Berikut adalah struktur direktori utama proyek beserta fungsinya secara lengkap:
 
@@ -11,7 +11,7 @@ Berikut adalah struktur direktori utama proyek beserta fungsinya secara lengkap:
 │   ├── database.json       # Database JSON lokal untuk menyimpan log, statistik, dan pengaturan
 │   └── sessions/           # Direktori penyimpanan kredensial sesi multi-device WhatsApp
 │
-├── fitur/                  # Core modul dan fitur-fitur backend API
+├── plugin/                 # Core modul, plugin, dan handler backend API
 │   ├── brat.ts             # Generator stiker teks Brat & Brat animasi (.brat, .bratvid)
 │   ├── db.ts               # Pengelola database JSON lokal (LocalJsonDatabase)
 │   ├── play.ts             # Pencari dan downloader lagu MP3 YouTube (.play)
@@ -52,14 +52,14 @@ Berikut adalah struktur direktori utama proyek beserta fungsinya secara lengkap:
 
 ---
 
-## 🛠️ Cara Menambahkan Fitur Baru ke Bot
+## 🛠️ Cara Menambahkan Plugin Baru ke Bot
 
-Ikuti panduan langkah demi langkah berikut untuk menambahkan fitur baru ke dalam sistem bot WhatsApp:
+Ikuti panduan langkah demi langkah berikut untuk menambahkan plugin baru ke dalam sistem bot WhatsApp:
 
-### Langkah 1: Buat file modul fitur baru
-Buatlah file TypeScript baru di dalam direktori `/fitur/`. Misalnya, untuk menambahkan fitur **Menulis Otomatis (.nulis)**:
+### Langkah 1: Buat file modul plugin baru
+Buatlah file TypeScript baru di dalam direktori `/plugin/`. Misalnya, untuk menambahkan plugin **Menulis Otomatis (.nulis)**:
 
-File: `/fitur/nulis.ts`
+File: `/plugin/nulis.ts`
 ```typescript
 export async function generateNulisImage(text: string): Promise<Buffer> {
   const apikey = 'cmnty-xxxx';
@@ -85,15 +85,15 @@ export async function generateNulisImage(text: string): Promise<Buffer> {
 }
 ```
 
-### Langkah 2: Impor fitur baru ke dalam `whatsapp.ts`
-Buka file `/fitur/whatsapp.ts`, lalu impor fungsi yang baru saja dibuat di bagian atas file:
+### Langkah 2: Impor plugin baru ke dalam `whatsapp.ts`
+Buka file `/plugin/whatsapp.ts`, lalu impor fungsi yang baru saja dibuat di bagian atas file:
 
 ```typescript
 import { generateNulisImage } from './nulis';
 ```
 
 ### Langkah 3: Daftarkan Command Baru di Handler Pesan
-Cari blok kode `messages.upsert` di dalam `/fitur/whatsapp.ts`. Di sana terdapat pengujian command dengan kata kunci `command.startsWith()`. Tambahkan penangan perintah baru di tempat tersebut:
+Cari blok kode `messages.upsert` di dalam `/plugin/whatsapp.ts`. Di sana terdapat pengujian command dengan kata kunci `command.startsWith()`. Tambahkan penangan perintah baru di tempat tersebut:
 
 ```typescript
             if (command.startsWith('.nulis')) {
@@ -105,25 +105,25 @@ Cari blok kode `messages.upsert` di dalam `/fitur/whatsapp.ts`. Di sana terdapat
               }
 
               if (!text) {
-                await socket.sendMessage(senderJid, { text: 'Format salah! Gunakan: *.nulis [teks]* atau balas teks dengan *.nulis*.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Format salah! Gunakan: *.nulis [teks]* atau balas teks dengan *.nulis*.' });
                 continue;
               }
 
               try {
-                await socket.sendMessage(senderJid, { text: 'Sedang menulis teks pada kertas, mohon tunggu...' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Sedang menulis teks pada kertas, mohon tunggu...' });
                 
                 const imageBuffer = await generateNulisImage(text);
-                await socket.sendMessage(senderJid, { image: imageBuffer, caption: 'Sukses menulis secara otomatis!' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { image: imageBuffer, caption: 'Sukses menulis secara otomatis!' });
               } catch (err: any) {
                 console.error('Nulis command error:', err);
-                await socket.sendMessage(senderJid, { text: `Gagal memproses tulisan: ${err?.message || 'Terjadi kesalahan.'}` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Gagal memproses tulisan: ${err?.message || 'Terjadi kesalahan.'}` });
               }
               continue;
             }
 ```
 
 ### Langkah 4: Daftarkan Fitur Baru pada Daftar Menu (`.menu`)
-Cari baris teks menu di dalam penanganan perintah `.menu` di `/fitur/whatsapp.ts`, dan tambahkan item baru di dalamnya agar pengguna tahu fitur tersebut tersedia:
+Cari baris teks menu di dalam penanganan perintah `.menu` di `/plugin/whatsapp.ts`, dan tambahkan item baru di dalamnya agar pengguna tahu fitur tersebut tersedia:
 
 ```typescript
 - *.nulis*: Menulis teks indah pada buku/kertas secara otomatis.

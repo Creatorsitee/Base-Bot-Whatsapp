@@ -99,15 +99,9 @@ export const PairingSection: React.FC<PairingSectionProps> = ({
       }
 
       onSessionChange(data.phoneNumber || fullNumber);
-
-      if (data.isAlreadyConnected) {
-        setPairingCode(null);
-        onRefresh();
-      } else {
-        setPairingCode(data.code);
-        setCountdown(120);
-        onRefresh();
-      }
+      setPairingCode(data.code);
+      setCountdown(120);
+      onRefresh();
     } catch (err: any) {
       setErrorMsg(err.message || 'Terjadi kesalahan.');
     } finally {

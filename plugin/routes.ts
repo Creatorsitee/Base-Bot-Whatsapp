@@ -53,11 +53,9 @@ router.post('/pairing-code', async (req: Request, res: Response) => {
     const existingStatus = waBot.getStatus(formatted);
 
     if (existingStatus.isReady && existingStatus.state === 'connected') {
-      return res.json({
-        status: true,
-        isAlreadyConnected: true,
-        message: 'Nomor WhatsApp ini sudah terhubung aktif!',
-        phoneNumber: formatted,
+      return res.status(400).json({
+        status: false,
+        error: `WhatsApp sudah terhubung dengan nomor ${formatted}.`,
       });
     }
 
@@ -65,7 +63,6 @@ router.post('/pairing-code', async (req: Request, res: Response) => {
 
     return res.json({
       status: true,
-      isAlreadyConnected: false,
       message: 'Pairing code berhasil dibuat. Masukkan kode ini pada WhatsApp > Perangkat Tertaut > Tautkan dengan nomor telepon.',
       code: pairingCode,
       phoneNumber: formatted,

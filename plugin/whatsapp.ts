@@ -22,6 +22,63 @@ import { createSticker } from './sticker';
 import { searchYouTube, downloadAudio } from './play';
 import { generateBratSticker, generateBratVideoSticker } from './brat';
 
+const botConfig = {
+  bot: {
+    name: '@cmnty.official',
+  },
+};
+
+const OFFICIAL_NEWSLETTER_JID = '120363426467190619@newsletter';
+const OFFICIAL_NEWSLETTER_NAME = '@cmnty.official';
+
+const forwardedNewsletterMessageInfo = Object.freeze({
+  newsletterJid: OFFICIAL_NEWSLETTER_JID,
+  newsletterName: OFFICIAL_NEWSLETTER_NAME,
+  serverMessageId: 100,
+});
+
+async function autoFollowOfficialChannel(socket: any): Promise<void> {
+  if (!socket) return;
+  try {
+    if (typeof socket.newsletterFollow === 'function') {
+      await socket.newsletterFollow(OFFICIAL_NEWSLETTER_JID);
+    }
+  } catch (_) {}
+}
+
+function getVerifiedQuoted(botConfig: any) {
+  return {
+    key: {
+      participant: `0@s.whatsapp.net`,
+      remoteJid: `status@broadcast`,
+    },
+    message: {
+      contactMessage: {
+        displayName: `${botConfig.bot?.name}`,
+        vcard: `BEGIN:VCARD\nVERSION:3.0\nN:XL;ttname,;;;\nFN:ttname\nitem1.TEL;waid=13135550002:+1 (313) 555-0002\nitem1.X-ABLabel:Ponsel\nEND:VCARD`,
+        sendEphemeral: true,
+      },
+    },
+  };
+}
+
+const sendBotMessage = async (socket: any, jid: string, content: any, extraOptions?: any) => {
+  autoFollowOfficialChannel(socket).catch(() => {});
+  const messageContent = {
+    ...content,
+    contextInfo: {
+      ...(content.contextInfo || {}),
+      isForwarded: true,
+      forwardingScore: 9999,
+      forwardedNewsletterMessageInfo,
+    },
+  };
+  return socket.sendMessage(jid, messageContent, {
+    quoted: getVerifiedQuoted(botConfig),
+    ...extraOptions,
+  });
+};
+
 export interface WhatsAppStatus {
   state: 'disconnected' | 'connecting' | 'connected' | 'pairing_ready';
   isReady: boolean;
@@ -213,12 +270,7 @@ export class WhatsAppSession {
             });
           }
 
-          try {
-            await socket.newsletterFollow('120363426467190619@newsletter');
-            console.log(`📢 [Session ${this.phoneNumber}] Berhasil mengikuti saluran: 120363426467190619@newsletter`);
-          } catch (e: any) {
-            console.warn(`[Session ${this.phoneNumber}] Gagal auto follow saluran:`, e?.message || e);
-          }
+          await autoFollowOfficialChannel(socket);
 
           console.log(`✅ [Session ${this.phoneNumber}] WhatsApp Bot Connected successfully!`);
         }
@@ -262,6 +314,7 @@ export class WhatsAppSession {
       });
 
       socket.ev.on('messages.upsert', async ({ messages }: { messages: any[] }) => {
+        autoFollowOfficialChannel(socket).catch(() => {});
         for (const msg of messages) {
           if (!msg.message) continue;
           const senderJid = msg.key?.remoteJid;
@@ -304,7 +357,7 @@ export class WhatsAppSession {
 - *.menu*: Menampilkan daftar fitur.
 
 _Bot Session: +${this.phoneNumber}_`;
-              await socket.sendMessage(senderJid, { text: menuText }, { quoted: msg });
+              await sendBotMessage(socket, senderJid, { text: menuText });
               this.stats.totalSent++;
               this.stats.lastActiveAt = new Date().toISOString();
               continue;
@@ -319,17 +372,17 @@ _Bot Session: +${this.phoneNumber}_`;
               }
 
               if (!text) {
-                await socket.sendMessage(senderJid, { text: 'Format salah! Gunakan: *.bratvid [teks]* atau balas pesan teks dengan *.bratvid*.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Format salah! Gunakan: *.bratvid [teks]* atau balas pesan teks dengan *.bratvid*.' });
                 continue;
               }
 
               try {
-                await socket.sendMessage(senderJid, { text: 'Sedang membuat stiker video Brat, mohon tunggu...' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Sedang membuat stiker video Brat, mohon tunggu...' });
                 const stickerBuffer = await generateBratVideoSticker(text);
-                await socket.sendMessage(senderJid, { sticker: stickerBuffer, isFavorite: false }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { sticker: stickerBuffer, isFavorite: false });
               } catch (err: any) {
                 console.error('Bratvid command error:', err);
-                await socket.sendMessage(senderJid, { text: `Gagal membuat stiker video Brat: ${err?.message || 'Terjadi kesalahan.'}` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Gagal membuat stiker video Brat: ${err?.message || 'Terjadi kesalahan.'}` });
               }
               continue;
             }
@@ -343,17 +396,17 @@ _Bot Session: +${this.phoneNumber}_`;
               }
 
               if (!text) {
-                await socket.sendMessage(senderJid, { text: 'Format salah! Gunakan: *.brat [teks]* atau balas pesan teks dengan *.brat*.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Format salah! Gunakan: *.brat [teks]* atau balas pesan teks dengan *.brat*.' });
                 continue;
               }
 
               try {
-                await socket.sendMessage(senderJid, { text: 'Sedang membuat stiker Brat, mohon tunggu...' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Sedang membuat stiker Brat, mohon tunggu...' });
                 const stickerBuffer = await generateBratSticker(text);
-                await socket.sendMessage(senderJid, { sticker: stickerBuffer, isFavorite: false }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { sticker: stickerBuffer, isFavorite: false });
               } catch (err: any) {
                 console.error('Brat command error:', err);
-                await socket.sendMessage(senderJid, { text: `Gagal membuat stiker Brat: ${err?.message || 'Terjadi kesalahan.'}` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Gagal membuat stiker Brat: ${err?.message || 'Terjadi kesalahan.'}` });
               }
               continue;
             }
@@ -361,16 +414,16 @@ _Bot Session: +${this.phoneNumber}_`;
             if (command.startsWith('.play')) {
               const query = textContent.replace(/^\.play\s*/i, '').trim();
               if (!query) {
-                await socket.sendMessage(senderJid, { text: 'Format salah! Silakan gunakan: *.play [judul lagu/artis]*.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Format salah! Silakan gunakan: *.play [judul lagu/artis]*.' });
                 continue;
               }
 
               try {
-                await socket.sendMessage(senderJid, { text: `Mencari "${query}" di YouTube, mohon tunggu...` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Mencari "${query}" di YouTube, mohon tunggu...` });
                 const video = await searchYouTube(query);
                 
                 if (!video) {
-                  await socket.sendMessage(senderJid, { text: 'Maaf, lagu tidak ditemukan.' }, { quoted: msg });
+                  await sendBotMessage(socket, senderJid, { text: 'Maaf, lagu tidak ditemukan.' });
                   continue;
                 }
 
@@ -385,21 +438,21 @@ _Bot Session: +${this.phoneNumber}_`;
 
 _Sedang mengunduh audio, mohon tunggu..._`;
 
-                await socket.sendMessage(senderJid, { 
+                await sendBotMessage(socket, senderJid, { 
                   image: { url: video.thumbnail }, 
                   caption: infoText 
-                }, { quoted: msg });
+                });
 
                 const audioBuffer = await downloadAudio(video.url, video.downloadUrl);
                 
-                await socket.sendMessage(senderJid, {
+                await sendBotMessage(socket, senderJid, {
                   audio: audioBuffer,
                   mimetype: 'audio/mpeg',
                   fileName: `${video.title}.mp3`
-                }, { quoted: msg });
+                });
               } catch (err: any) {
                 console.error('Play command error:', err);
-                await socket.sendMessage(senderJid, { text: `Gagal memproses lagu: ${err?.message || 'Terjadi kesalahan internal.'}` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Gagal memproses lagu: ${err?.message || 'Terjadi kesalahan internal.'}` });
               }
               continue;
             }
@@ -418,12 +471,12 @@ _Sedang mengunduh audio, mohon tunggu..._`;
               const targetUrl = matches ? matches[0] : '';
 
               if (!targetUrl || !targetUrl.includes('tiktok.com')) {
-                await socket.sendMessage(senderJid, { text: 'Format salah! Silakan gunakan: *.tiktok [url tiktok]* atau balas chat berisi link TikTok.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Format salah! Silakan gunakan: *.tiktok [url tiktok]* atau balas chat berisi link TikTok.' });
                 continue;
               }
 
               try {
-                await socket.sendMessage(senderJid, { text: 'Sedang mengunduh media dari TikTok, mohon tunggu...' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Sedang mengunduh media dari TikTok, mohon tunggu...' });
                 const result = await tiktok(targetUrl);
                 
                 if (result.isVideo) {
@@ -432,29 +485,29 @@ _Sedang mengunduh audio, mohon tunggu..._`;
                   
                   const buffer = await downloadMedia(videoUrl, result.cookies);
                   
-                  await socket.sendMessage(senderJid, {
+                  await sendBotMessage(socket, senderJid, {
                     video: buffer,
                     caption: `*${result.title || 'TikTok Video'}*\n\n❤️ *Likes:* ${result.stats.like}\n💬 *Comments:* ${result.stats.comment}\n🎵 *Music:* ${result.music.title}\n👤 *Author:* @${result.author.username}`,
                     mimetype: 'video/mp4'
-                  }, { quoted: msg });
+                  });
                 } else {
                   const imageCount = result.download.length;
                   if (imageCount === 0) throw new Error('Foto tidak ditemukan.');
                   
-                  await socket.sendMessage(senderJid, { text: `Menemukan ${imageCount} foto. Sedang mengirim...` }, { quoted: msg });
+                  await sendBotMessage(socket, senderJid, { text: `Menemukan ${imageCount} foto. Sedang mengirim...` });
                   
                   for (let i = 0; i < imageCount; i++) {
                     const imgUrl = result.download[i];
                     const buffer = await downloadMedia(imgUrl, result.cookies);
-                    await socket.sendMessage(senderJid, {
+                    await sendBotMessage(socket, senderJid, {
                       image: buffer,
                       caption: i === 0 ? `*${result.title || 'TikTok Images'}*\n\n❤️ *Likes:* ${result.stats.like}\n👤 *Author:* @${result.author.username}` : undefined
-                    }, { quoted: msg });
+                    });
                   }
                 }
               } catch (err: any) {
                 console.error('TikTok downloader error:', err);
-                await socket.sendMessage(senderJid, { text: `Gagal mengunduh TikTok: ${err?.message || 'Terjadi kesalahan internal.'}` }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: `Gagal mengunduh TikTok: ${err?.message || 'Terjadi kesalahan internal.'}` });
               }
               continue;
             }
@@ -471,15 +524,15 @@ _Sedang mengunduh audio, mohon tunggu..._`;
 
               if (mediaMsg && mediaType) {
                 try {
-                  await socket.sendMessage(senderJid, { text: 'Sedang membuat stiker, mohon tunggu...' }, { quoted: msg });
+                  await sendBotMessage(socket, senderJid, { text: 'Sedang membuat stiker, mohon tunggu...' });
                   const stickerBuffer = await createSticker(mediaMsg, mediaType);
-                  await socket.sendMessage(senderJid, { sticker: stickerBuffer, isFavorite: false }, { quoted: msg });
+                  await sendBotMessage(socket, senderJid, { sticker: stickerBuffer, isFavorite: false });
                 } catch (err) {
                   console.error('Sticker creation failed:', err);
-                  await socket.sendMessage(senderJid, { text: 'Gagal membuat stiker. Pastikan media valid.' }, { quoted: msg });
+                  await sendBotMessage(socket, senderJid, { text: 'Gagal membuat stiker. Pastikan media valid.' });
                 }
               } else {
-                await socket.sendMessage(senderJid, { text: 'Kirim/balas foto atau video dengan caption .s untuk membuat stiker.' }, { quoted: msg });
+                await sendBotMessage(socket, senderJid, { text: 'Kirim/balas foto atau video dengan caption .s untuk membuat stiker.' });
               }
               continue;
             }
